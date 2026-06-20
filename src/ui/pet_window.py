@@ -108,9 +108,18 @@ class DesktopPet(QWidget):
                 PetState.SPEAKING: "sit_talk",
                 PetState.WASHING: "wash",
                 PetState.YAWNING: "yawn",
-                PetState.SCRATCHING: "scratch"
+                PetState.SCRATCHING: "scratch",
+                PetState.DRAGGING: "drag"
             }
             anim_key = state_to_key.get(state, "idle")
+            
+            if state == PetState.WASHING:
+                if self.current_anim_key not in ("wash", "lick_standing"):
+                    import random
+                    anim_key = random.choice(["wash", "lick_standing"])
+                else:
+                    anim_key = self.current_anim_key
+
             
         current_anim = self.loaded_animations.get(anim_key)
         if not current_anim:
@@ -152,6 +161,7 @@ class DesktopPet(QWidget):
         if event.button() == Qt.LeftButton:
             self.dragging = True
             self.offset = event.position().toPoint()
+            self.presenter.handle_drag_start()
             
     def mouseMoveEvent(self, event):
         if self.dragging and event.buttons() == Qt.LeftButton:
@@ -161,6 +171,8 @@ class DesktopPet(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.dragging = False
+            self.presenter.handle_drag_stop()
+
 
     def contextMenuEvent(self, event):
         """Creates right-click actions and forwards selections to the presenter."""

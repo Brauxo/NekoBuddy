@@ -11,6 +11,7 @@ class PetState(Enum):
     WASHING = auto()
     YAWNING = auto()
     SCRATCHING = auto()
+    DRAGGING = auto()
 
 class StateMachine:
     """
@@ -50,7 +51,7 @@ class StateMachine:
 
     def update(self):
         """Called every frame to handle state transitions based on time elapsed and mood probabilities."""
-        if self.current_state in (PetState.THINKING, PetState.SPEAKING):
+        if self.current_state in (PetState.THINKING, PetState.SPEAKING, PetState.DRAGGING):
             return
 
         time_in_state = self.get_time_in_state()

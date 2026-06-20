@@ -14,9 +14,12 @@ def mock_env_file(tmp_path, monkeypatch):
     monkeypatch.delenv("PET_COLOR", raising=False)
     monkeypatch.delenv("MASTER_COLOR", raising=False)
     monkeypatch.delenv("LITELLM_MODEL", raising=False)
+    monkeypatch.delenv("PET_LANGUAGE", raising=False)
 
     import src.config.settings
     monkeypatch.setattr(src.config.settings, "ENV_PATH", temp_env)
+    src.config.settings._pending_writes.clear()
+    src.config.settings._flush_scheduled = False
     src.config.settings.SettingsManager.reload()
     
     yield temp_env

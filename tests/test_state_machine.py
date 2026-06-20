@@ -26,3 +26,15 @@ def test_set_mood():
     # Verify invalid moods are rejected and keep the previous mood
     sm.set_mood("excited")
     assert sm.current_mood == "LAZY"
+
+def test_dragging_state():
+    """Verifies that the DRAGGING state blocks autonomous transitions even after time elapsed."""
+    sm = StateMachine()
+    sm.change_state(PetState.DRAGGING)
+    assert sm.current_state == PetState.DRAGGING
+    
+    # Set time elapsed to a high value and verify update does not transition state
+    sm.state_start_time = time.time() - 50.0
+    sm.update()
+    assert sm.current_state == PetState.DRAGGING
+

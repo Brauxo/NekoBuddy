@@ -82,4 +82,7 @@ ANIMATIONS = {
     "wash": AnimConfig(row=38, frames=7, speed_multiplier=1.5),
     "yawn": AnimConfig(row=32, frames=8, speed_multiplier=1.8),
     "scratch": AnimConfig(row=40, frames=11, speed_multiplier=1.2),
+    "drag": AnimConfig(row=43, frames=1, speed_multiplier=1.0),
+    "lick_standing": AnimConfig(row=37, frames=9, speed_multiplier=1.2),
 }
+

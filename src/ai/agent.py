@@ -59,6 +59,13 @@ class ChatAgent:
 
         threading.Thread(target=save_task, daemon=True).start()
 
+    def add_event(self, event_text: str):
+        """Appends an event description to the history, trims, and saves to disk."""
+        self.history.append({"role": "user", "content": f"({event_text})"})
+        if len(self.history) > 21:
+            self.history = [self.history[0]] + self.history[-20:]
+        self._save_memory()
+
     def generate_response(self, user_text: str, current_state: str) -> str:
         """Appends the user's message to history and requests an LLM completion."""
         full_msg = get_context(current_state) + (user_text if user_text else "(The user is looking at you)")
