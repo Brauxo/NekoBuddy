@@ -38,6 +38,10 @@ env/
 *.log
 data/
 
+# Build and Release Outputs
+Release_*/
+*.spec
+
 # Raw Art Source Files
 assets/*.aseprite
 assets/*.gpl

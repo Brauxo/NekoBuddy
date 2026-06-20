@@ -1,6 +1,6 @@
 [project]
 name = "NekoBuddy"
-version = "0.1.0"
+version = "0.1.1"
 description = "A retro desktop companion, powered entirely by local LLMs."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,3 +23,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["src", "src.ai", "src.config", "src.core", "src.ui"]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+]

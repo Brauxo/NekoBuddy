@@ -135,7 +135,7 @@ class DesktopPet(QWidget):
             state_to_key = {
                 PetState.IDLE: "idle",
                 PetState.SLEEPING: "sleep",
-                PetState.THINKING: "sit_down_transition", # It will sit and think
+                PetState.THINKING: "idle",                # Changed from sit_down_transition to idle
                 PetState.SPEAKING: "sit_talk",            # It will literally talk!
                 PetState.WASHING: "wash",
                 PetState.YAWNING: "yawn",

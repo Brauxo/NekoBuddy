@@ -5,7 +5,12 @@ from pathlib import Path
 # Suppress harmless Qt warnings about geometry/DPI in the terminal
 os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.window=false"
 
-project_root = str(Path(__file__).resolve().parent.parent)
+
+if getattr(sys, 'frozen', False):
+    project_root = str(Path(sys.executable).parent)
+else:
+    project_root = str(Path(__file__).resolve().parent.parent)
+
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 

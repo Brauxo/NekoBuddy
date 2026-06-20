@@ -1,8 +1,12 @@
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv, set_key
 
-ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+if getattr(sys, 'frozen', False):
+    ENV_PATH = Path(sys.executable).parent / ".env"
+else:
+    ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 if not ENV_PATH.exists():
     ENV_PATH.write_text("", encoding="utf-8")
 
@@ -50,3 +54,15 @@ class SettingsManager:
     @staticmethod
     def get_pet_sprite() -> str:
         return SettingsManager.get("PET_SPRITE", "assets/cat 1.png")
+
+    @staticmethod
+    def get_openai_key() -> str:
+        return SettingsManager.get("OPENAI_API_KEY", "")
+
+    @staticmethod
+    def get_anthropic_key() -> str:
+        return SettingsManager.get("ANTHROPIC_API_KEY", "")
+
+    @staticmethod
+    def get_gemini_key() -> str:
+        return SettingsManager.get("GEMINI_API_KEY", "")
