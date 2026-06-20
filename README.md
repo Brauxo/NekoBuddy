@@ -2,7 +2,7 @@
   <img src="assets/BG_NekoBuddy.png" alt="NekoBuddy Background" width="800">
 </p>
 
-> **Developed by Owen ([@Brauxo](https://github.com/Brauxo))**  
+> **Developed by [@Brauxo](https://github.com/Brauxo)**  
 > *Huge thanks to **Last tick** for the incredible pixel art assets used in this project! Make sure to check out his [itch.io profile here](https://last-tick.itch.io/) to support his work!*
 
 A retro desktop companion powered by any LLM.
@@ -11,7 +11,7 @@ NekoBuddy is a virtual cat that lives on your computer desktop. Instead of relyi
 
 ---
 
-<h2><img src="https://readme-typing-svg.demolab.com?font=Press+Start+2P&size=26&pause=1000&color=000000&vCenter=true&width=1000&height=60&lines=Features" alt="Features"></h2>
+## Features
 
 - **Dual-Agent Architecture**: Built with a foreground `ChatAgent` for direct conversation and a background `MoodAgent` that proactively evaluates your desktop context.
 - **Context-Aware**: Reads your active window titles to provide relevant commentary on whatever application you are currently using.
@@ -21,7 +21,7 @@ NekoBuddy is a virtual cat that lives on your computer desktop. Instead of relyi
 
 ---
 
-<h2><img src="https://readme-typing-svg.demolab.com?font=Press+Start+2P&size=26&pause=1000&color=000000&vCenter=true&width=1000&height=60&lines=Quickstart" alt="Quickstart"></h2>
+## Quickstart
 
 ### Prerequisites
 1. Install [uv](https://github.com/astral-sh/uv) (Python package manager)
@@ -47,7 +47,7 @@ make run
 
 ---
 
-<h2><img src="https://readme-typing-svg.demolab.com?font=Press+Start+2P&size=26&pause=1000&color=000000&vCenter=true&width=1000&height=60&lines=Recommended+Models" alt="Recommended Models"></h2>
+## Recommended Models
 
 Thanks to LiteLLM, you can use any model provider just by typing the standard prefix into the NekoBuddy Settings Menu (e.g., `openai/gpt-4o`). If using a cloud provider, simply add your API key to the `.env` file.
 
@@ -56,7 +56,7 @@ I highly recommend using [**`gemma4`**](https://ollama.com/library/gemma4) (or a
 
 ---
 
-<h2><img src="https://readme-typing-svg.demolab.com?font=Press+Start+2P&size=26&pause=1000&color=000000&vCenter=true&width=1000&height=60&lines=How+to+Play+&+Settings" alt="How to Play & Settings"></h2>
+## How to Play & Settings
 
 1. **Move**: Click and drag the cat anywhere on your screen.
 2. **Chat**: Right-click and select "Talk to Cat" to initiate a conversation. The LLM maintains persistent memory of your chats.
@@ -65,7 +65,7 @@ I highly recommend using [**`gemma4`**](https://ollama.com/library/gemma4) (or a
 
 ---
 
-<h2><img src="https://readme-typing-svg.demolab.com?font=Press+Start+2P&size=26&pause=1000&color=000000&vCenter=true&width=1000&height=60&lines=Feedback+&+Feature+Requests" alt="Feedback & Feature Requests"></h2>
+## Feedback & Feature Requests
 
 This project is actively being improved! I am completely open to changes, improvements, and new ideas. 
 
