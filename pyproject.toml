@@ -1,6 +1,6 @@
 [project]
 name = "NekoBuddy"
-version = "0.1.0"
+version = "0.2.0"
 description = "A retro desktop companion, powered entirely by local LLMs."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,4 +27,11 @@ packages = ["src", "src.ai", "src.config", "src.core", "src.ui"]
 [dependency-groups]
 dev = [
     "pyinstaller>=6.21.0",
+    "pytest>=8.0.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["Release_*", "dist", "build", ".venv", "_internal"]
+
+
