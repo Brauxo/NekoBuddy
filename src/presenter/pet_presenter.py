@@ -1,4 +1,5 @@
 import logging
+import random
 from PySide6.QtCore import QObject, QTimer, QThread, Signal, Qt
 from PySide6.QtWidgets import QApplication, QInputDialog
 
@@ -30,19 +31,19 @@ class MoodWorker(QThread):
     """Evaluates the user's active window environment context on a background thread."""
     finished = Signal(dict)
 
-    def __init__(self, agent: MoodAgent, current_state: str, memory_history: list):
+    def __init__(self, agent: MoodAgent, current_state: str, memory_history: list, events: list = None):
         super().__init__()
         self.agent = agent
         self.current_state = current_state
         self.memory_history = memory_history
+        self.events = events or []
 
     def run(self):
         try:
-            result = self.agent.evaluate_mood(self.current_state, self.memory_history)
+            result = self.agent.evaluate_mood(self.current_state, self.memory_history, self.events)
             self.finished.emit(result)
         except Exception as e:
             logger.exception("Error in MoodWorker thread execution")
-            self.finished.emit({"mood": "OBSERVANT", "speech": None})
 
 class PetPresenter(QObject):
     """
@@ -58,6 +59,7 @@ class PetPresenter(QObject):
         
         self.chat_worker = None
         self.mood_worker = None
+        self.pending_events = []
         
         self.logic_timer = QTimer(self)
         self.logic_timer.timeout.connect(self.update_logic)
@@ -68,7 +70,12 @@ class PetPresenter(QObject):
     def start(self):
         """Starts all background logic timers."""
         self.logic_timer.start(16)  # ~60 fps logic tick
-        self.proactive_timer.start(60000)  # Check mood context every minute
+        self._schedule_next_mood()
+
+    def _schedule_next_mood(self):
+        """Schedules the next mood evaluation after a random delay between 35-70 seconds."""
+        delay = random.randint(35000, 70000)
+        self.proactive_timer.singleShot(delay, self.evaluate_mood_background)
 
     def update_logic(self):
         """Updates the state machine and coordinates boundaries collision and pet positioning."""
@@ -101,8 +108,27 @@ class PetPresenter(QObject):
                 
             self.view.move_pet(new_x, new_y)
 
+    def handle_drag_start(self):
+        """Transitions the pet into the DRAGGING state and hides any active chat bubble."""
+        self.state_machine.change_state(PetState.DRAGGING)
+        self.view.hide_chat_bubble()
+
+    def handle_drag_stop(self):
+        """Returns the pet to the IDLE state and triggers an immediate mood reaction to the grab."""
+        if self.state_machine.current_state == PetState.DRAGGING:
+            self.state_machine.change_state(PetState.IDLE)
+            self.view.hide_chat_bubble()
+            pet_name = SettingsManager.get_pet_name()
+            self.pending_events.append(f"The user just grabbed and moved {pet_name} across the screen.")
+            self.evaluate_mood_background()
+
+
+
     def handle_talk_request(self):
         """Prompts the user for dialogue and triggers the chat lifecycle."""
+        if self.chat_worker is not None and self.chat_worker.isRunning():
+            return
+            
         text, ok = QInputDialog.getText(self.view, "Chat", "Say something to your cat:")
         if ok and text:
             self.interact_with_ai(text)
@@ -126,7 +152,9 @@ class PetPresenter(QObject):
             
         pet_name = SettingsManager.get_pet_name()
         pet_color = SettingsManager.get_pet_color()
-        html = f"<b><span style='color: {pet_color};'>{pet_name}:</span></b> {reply}"
+        
+        safe_text = reply.replace("\n", "<br>")
+        html = f"<b><span style='color: {pet_color};'>{pet_name}:</span></b> {safe_text}"
         self.view.show_chat_bubble(html)
         
         QTimer.singleShot(7000, self.hide_chat_bubble)
@@ -137,12 +165,18 @@ class PetPresenter(QObject):
             return
             
         if self.state_machine.current_state not in (PetState.THINKING, PetState.SPEAKING):
-            self.mood_worker = MoodWorker(self.mood_agent, self.state_machine.current_state.name, self.chat_agent.history)
+            events = list(self.pending_events)
+            self.pending_events.clear()
+            self.mood_worker = MoodWorker(self.mood_agent, self.state_machine.current_state.name, self.chat_agent.history, events)
             self.mood_worker.finished.connect(self.on_mood_response)
             self.mood_worker.start()
 
     def on_mood_response(self, result: dict):
-        """Applies evaluated mood shift and displays proactive speech if generated."""
+        """Applies evaluated mood shift and displays proactive speech."""
+        if self.state_machine.current_state not in (PetState.IDLE, PetState.WALKING, PetState.WASHING, PetState.SLEEPING):
+            self._schedule_next_mood()
+            return
+            
         mood = result.get("mood", "OBSERVANT")
         speech = result.get("speech")
         
@@ -161,6 +195,8 @@ class PetPresenter(QObject):
             self.chat_agent._save_memory()
             
             QTimer.singleShot(5000, self.hide_chat_bubble)
+        
+        self._schedule_next_mood()
 
     def hide_chat_bubble(self):
         """Closes the UI bubble and returns the pet state machine to IDLE."""

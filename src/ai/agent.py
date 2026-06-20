@@ -1,12 +1,13 @@
 import json
 import logging
 import threading
-import litellm
 import pywinctl
+import re
 from datetime import datetime
 from src.config.settings import SettingsManager
 from src.config.personality import get_chat_prompt, get_mood_prompt
 from src.config.constants import MEMORY_PATH
+from src.ai.providers.factory import get_provider
 
 logger = logging.getLogger("nekobuddy.ai")
 
@@ -40,6 +41,13 @@ class ChatAgent:
                         data[0]["content"] = get_chat_prompt()
                     else:
                         data.insert(0, {"role": "system", "content": get_chat_prompt()})
+                        
+                    for msg in data:
+                        if msg.get("role") == "user":
+                            msg["content"] = re.sub(r'\[\[SYSTEM CONTEXT:.*?\]\]\n?', '', msg["content"], flags=re.DOTALL).strip()
+                            if not msg["content"]:
+                                msg["content"] = "(The user is looking at you)"
+                                
                     return data
             except Exception as e:
                 logger.error(f"Failed to load conversation history: {e}")
@@ -59,14 +67,21 @@ class ChatAgent:
 
         threading.Thread(target=save_task, daemon=True).start()
 
+
     def generate_response(self, user_text: str, current_state: str) -> str:
         """Appends the user's message to history and requests an LLM completion."""
         full_msg = get_context(current_state) + (user_text if user_text else "(The user is looking at you)")
         self.history.append({"role": "user", "content": full_msg})
         
+        if len(self.history) > 7:
+            payload = [self.history[0]] + self.history[-6:]
+        else:
+            payload = list(self.history)
+        
         try:
-            response = litellm.completion(model=SettingsManager.get_model(), messages=self.history)
-            reply = response.choices[0].message.content
+            provider, clean_model = get_provider(SettingsManager.get_model())
+            reply = provider.generate(clean_model, payload, json_mode=False)
+            
             self.history.append({"role": "assistant", "content": reply})
             
             if len(self.history) > 21:
@@ -78,28 +93,33 @@ class ChatAgent:
             return f"*hiss* Error connecting to my brain: {str(e)}"
 
 
+
+
+
 class MoodAgent:
     """Runs asynchronously to determine the cat's mood and trigger proactive speech."""
     def __init__(self):
         pass
         
-    def evaluate_mood(self, current_state: str, memory_history: list) -> dict:
+    def evaluate_mood(self, current_state: str, memory_history: list, events: list = None) -> dict:
         """Asks the LLM to evaluate the desktop context and decide the pet's next mood."""
         messages = [{"role": "system", "content": get_mood_prompt()}]
         
         recent_history = [msg for msg in memory_history[-5:] if msg.get("role") != "system"]
         history_text = "Recent conversation:\n" + "\n".join([f"{m['role']}: {m['content']}" for m in recent_history])
         
-        prompt = get_context(current_state) + history_text + "\nEvaluate mood and output JSON:"
+        prompt = get_context(current_state) + history_text
+        
+        if events:
+            prompt += "\nRecent events: " + " ".join(events)
+        
+        prompt += "\nEvaluate mood and output JSON:"
         messages.append({"role": "user", "content": prompt})
         
         try:
-            response = litellm.completion(
-                model=SettingsManager.get_model(),
-                messages=messages,
-                response_format={"type": "json_object"}
-            )
-            reply = response.choices[0].message.content
+            provider, clean_model = get_provider(SettingsManager.get_model())
+            reply = provider.generate(clean_model, messages, json_mode=True)
+            
             # litellm will return JSON if possible, otherwise we try parsing it
             json_str = reply
             # Strip markdown if present

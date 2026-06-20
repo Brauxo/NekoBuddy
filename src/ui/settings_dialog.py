@@ -90,7 +90,22 @@ class SettingsDialog(QDialog):
         self.sprite_combo.setCurrentText(current_friendly_name)
         form_layout.addRow("Pet Color:", self.sprite_combo)
         
+        self.language_combo = QComboBox()
+        languages = [
+            "Arabic", "Chinese (Simplified)", "Chinese (Traditional)",
+            "Czech", "Danish", "Dutch", "English", "Finnish", "French",
+            "German", "Greek", "Hebrew", "Hindi", "Hungarian", "Indonesian",
+            "Italian", "Japanese", "Korean", "Norwegian", "Polish",
+            "Portuguese", "Romanian", "Russian", "Spanish", "Swedish",
+            "Thai", "Turkish", "Ukrainian", "Vietnamese",
+        ]
+        for lang in languages:
+            self.language_combo.addItem(lang)
+        self.language_combo.setCurrentText(SettingsManager.get_language())
+        form_layout.addRow("Language:", self.language_combo)
+        
         general_group.setLayout(form_layout)
+
         main_layout.addWidget(general_group)
 
         # --- AI API Settings ---
@@ -107,6 +122,9 @@ class SettingsDialog(QDialog):
             self.model_combo.addItem("Loading models...")
             
         api_layout.addRow("LLM Model:", self.model_combo)
+
+        self.ollama_host_input = QLineEdit(SettingsManager.get_ollama_host())
+        api_layout.addRow("Ollama Host:", self.ollama_host_input)
 
         self.openai_input = QLineEdit(SettingsManager.get_openai_key())
         self.openai_input.setEchoMode(QLineEdit.Password)
@@ -174,17 +192,20 @@ class SettingsDialog(QDialog):
         filename = self.sprite_map.get(friendly_name, "cat 1.png")
         SettingsManager.set("PET_SPRITE", f"assets/{filename}")
         
+        selected_lang = self.language_combo.currentText()
+        SettingsManager.set("PET_LANGUAGE", selected_lang)
+        
         selected_model = self.model_combo.currentText().strip()
         if selected_model not in ("Enter or select a model...", "Loading models..."):
             SettingsManager.set("LITELLM_MODEL", selected_model)
+
+        SettingsManager.set("OLLAMA_HOST", self.ollama_host_input.text().strip())
 
         # Save API keys
         SettingsManager.set("OPENAI_API_KEY", self.openai_input.text().strip())
         SettingsManager.set("ANTHROPIC_API_KEY", self.anthropic_input.text().strip())
         SettingsManager.set("GEMINI_API_KEY", self.gemini_input.text().strip())
         
-        SettingsManager.reload()
-        
-        logger.info("Settings saved and reloaded.")
+        logger.info("Settings saved.")
         QMessageBox.information(self, "Settings Saved", "Settings updated! The brain has been reloaded.")
         self.accept()
