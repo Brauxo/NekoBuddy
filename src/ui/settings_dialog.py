@@ -123,6 +123,9 @@ class SettingsDialog(QDialog):
             
         api_layout.addRow("LLM Model:", self.model_combo)
 
+        self.ollama_host_input = QLineEdit(SettingsManager.get_ollama_host())
+        api_layout.addRow("Ollama Host:", self.ollama_host_input)
+
         self.openai_input = QLineEdit(SettingsManager.get_openai_key())
         self.openai_input.setEchoMode(QLineEdit.Password)
         api_layout.addRow("OpenAI API Key:", self.openai_input)
@@ -195,6 +198,8 @@ class SettingsDialog(QDialog):
         selected_model = self.model_combo.currentText().strip()
         if selected_model not in ("Enter or select a model...", "Loading models..."):
             SettingsManager.set("LITELLM_MODEL", selected_model)
+
+        SettingsManager.set("OLLAMA_HOST", self.ollama_host_input.text().strip())
 
         # Save API keys
         SettingsManager.set("OPENAI_API_KEY", self.openai_input.text().strip())

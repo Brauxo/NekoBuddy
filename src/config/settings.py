@@ -95,6 +95,10 @@ class SettingsManager:
         return SettingsManager.get("LITELLM_MODEL", "")
         
     @staticmethod
+    def get_ollama_host() -> str:
+        return SettingsManager.get("OLLAMA_HOST", "http://localhost:11434")
+        
+    @staticmethod
     def get_pet_sprite() -> str:
         return SettingsManager.get("PET_SPRITE", DEFAULT_SPRITE_PATH)
 
