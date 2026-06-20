@@ -47,3 +47,7 @@ assets/*.aseprite
 assets/*.gpl
 assets/Frame indexes.png
 assets/cat 16x16 with text.png
+
+# Zipped Releases
+*.zip
+
