@@ -1,14 +1,20 @@
 import os
-import sys
-from pathlib import Path
+import logging
+import threading
 from dotenv import load_dotenv, set_key
+from src.config.constants import (
+    APP_ROOT, DEFAULT_PET_NAME, DEFAULT_MASTER_NAME,
+    DEFAULT_PET_COLOR, DEFAULT_MASTER_COLOR, DEFAULT_SPRITE_PATH
+)
 
-if getattr(sys, 'frozen', False):
-    ENV_PATH = Path(sys.executable).parent / ".env"
-else:
-    ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+logger = logging.getLogger("nekobuddy.config")
+
+ENV_PATH = APP_ROOT / ".env"
 if not ENV_PATH.exists():
-    ENV_PATH.write_text("", encoding="utf-8")
+    try:
+        ENV_PATH.write_text("", encoding="utf-8")
+    except Exception as e:
+        logger.error(f"Could not create .env file: {e}")
 
 load_dotenv(str(ENV_PATH))
 
@@ -27,25 +33,32 @@ class SettingsManager:
 
     @staticmethod
     def set(key: str, value: str):
-        """Saves a configuration value both to memory and the persistent .env file."""
-        set_key(str(ENV_PATH), key, value)
+        """Saves a configuration value to in-memory environment, and writes to disk on a background thread."""
         os.environ[key] = value
+        
+        def save_task():
+            try:
+                set_key(str(ENV_PATH), key, value)
+            except Exception as e:
+                logger.error(f"Failed to write setting '{key}' to disk: {e}")
+
+        threading.Thread(target=save_task, daemon=True).start()
 
     @staticmethod
     def get_pet_name() -> str:
-        return SettingsManager.get("PET_NAME", "Pixel")
+        return SettingsManager.get("PET_NAME", DEFAULT_PET_NAME)
 
     @staticmethod
     def get_master_name() -> str:
-        return SettingsManager.get("MASTER_NAME", "Master")
+        return SettingsManager.get("MASTER_NAME", DEFAULT_MASTER_NAME)
         
     @staticmethod
     def get_pet_color() -> str:
-        return SettingsManager.get("PET_COLOR", "#ff9999")
+        return SettingsManager.get("PET_COLOR", DEFAULT_PET_COLOR)
         
     @staticmethod
     def get_master_color() -> str:
-        return SettingsManager.get("MASTER_COLOR", "#99ccff")
+        return SettingsManager.get("MASTER_COLOR", DEFAULT_MASTER_COLOR)
         
     @staticmethod
     def get_model() -> str:
@@ -53,7 +66,7 @@ class SettingsManager:
         
     @staticmethod
     def get_pet_sprite() -> str:
-        return SettingsManager.get("PET_SPRITE", "assets/cat 1.png")
+        return SettingsManager.get("PET_SPRITE", DEFAULT_SPRITE_PATH)
 
     @staticmethod
     def get_openai_key() -> str:

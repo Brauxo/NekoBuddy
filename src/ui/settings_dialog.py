@@ -1,4 +1,5 @@
 import os
+import logging
 import subprocess
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                                QLineEdit, QPushButton, QComboBox, QColorDialog,
@@ -8,7 +9,10 @@ from PySide6.QtGui import QColor
 
 from src.config.settings import SettingsManager
 
+logger = logging.getLogger("nekobuddy.settings")
+
 class OllamaWorker(QThread):
+    """Background worker that queries the local system for available Ollama models."""
     finished = Signal(list)
 
     def run(self):
@@ -16,15 +20,24 @@ class OllamaWorker(QThread):
         try:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            result = subprocess.run(["ollama", "list"], capture_output=True, text=True, startupinfo=startupinfo)
+            result = subprocess.run(
+                ["ollama", "list"],
+                capture_output=True,
+                text=True,
+                startupinfo=startupinfo,
+                timeout=5
+            )
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')[1:]
                 models = [f"ollama/{line.split()[0]}" for line in lines if line.strip()]
         except Exception as e:
-            pass
+            logger.warning(f"Could not retrieve local Ollama models list: {e}")
+            
         self.finished.emit(models)
 
+
 class SettingsDialog(QDialog):
+    """Configuration interface for setting names, colors, sprite types, and LLM backends."""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("NekoBuddy Settings")
@@ -38,7 +51,7 @@ class SettingsDialog(QDialog):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         
-        # --- General Settings ---
+        # --- General settings ---
         general_group = QGroupBox("General")
         form_layout = QFormLayout()
 
@@ -60,7 +73,6 @@ class SettingsDialog(QDialog):
         form_layout.addRow("Master Name Color:", self.master_color_btn)
 
         self.sprite_combo = QComboBox()
-        
         self.sprite_map = {
             "Black Cat": "cat 1.png",
             "Orange Cat": "cat 1.6.png",
@@ -68,7 +80,7 @@ class SettingsDialog(QDialog):
         }
 
         current_sprite_file = os.path.basename(SettingsManager.get_pet_sprite())
-        current_friendly_name = "Black Cat" # Default
+        current_friendly_name = "Black Cat"
         
         for friendly_name, filename in self.sprite_map.items():
             self.sprite_combo.addItem(friendly_name)
@@ -77,10 +89,11 @@ class SettingsDialog(QDialog):
                 
         self.sprite_combo.setCurrentText(current_friendly_name)
         form_layout.addRow("Pet Color:", self.sprite_combo)
+        
         general_group.setLayout(form_layout)
         main_layout.addWidget(general_group)
 
-        # --- AI & API Settings ---
+        # --- AI API Settings ---
         api_group = QGroupBox("AI Configuration")
         api_layout = QFormLayout()
 
@@ -126,7 +139,8 @@ class SettingsDialog(QDialog):
         self.ollama_worker.finished.connect(self.on_ollama_models_loaded)
         self.ollama_worker.start()
 
-    def on_ollama_models_loaded(self, models):
+    def on_ollama_models_loaded(self, models: list):
+        """Callback when local Ollama models list has loaded."""
         current_text = self.model_combo.currentText()
         if current_text == "Loading models...":
             self.model_combo.clear()
@@ -150,6 +164,7 @@ class SettingsDialog(QDialog):
             self.master_color_btn.setStyleSheet(f"background-color: {self.master_color}; color: black;")
 
     def save_settings(self):
+        """Validates, applies, and persists the configuration settings."""
         SettingsManager.set("PET_NAME", self.pet_name_input.text().strip())
         SettingsManager.set("MASTER_NAME", self.master_name_input.text().strip())
         SettingsManager.set("PET_COLOR", self.pet_color)
@@ -164,14 +179,12 @@ class SettingsDialog(QDialog):
             SettingsManager.set("LITELLM_MODEL", selected_model)
 
         # Save API keys
-        if self.openai_input.text().strip():
-            SettingsManager.set("OPENAI_API_KEY", self.openai_input.text().strip())
-        if self.anthropic_input.text().strip():
-            SettingsManager.set("ANTHROPIC_API_KEY", self.anthropic_input.text().strip())
-        if self.gemini_input.text().strip():
-            SettingsManager.set("GEMINI_API_KEY", self.gemini_input.text().strip())
+        SettingsManager.set("OPENAI_API_KEY", self.openai_input.text().strip())
+        SettingsManager.set("ANTHROPIC_API_KEY", self.anthropic_input.text().strip())
+        SettingsManager.set("GEMINI_API_KEY", self.gemini_input.text().strip())
         
         SettingsManager.reload()
         
+        logger.info("Settings saved and reloaded.")
         QMessageBox.information(self, "Settings Saved", "Settings updated! The brain has been reloaded.")
         self.accept()
